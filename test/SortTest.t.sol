@@ -2,14 +2,13 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
-import {Counter} from "../src/Counter.sol";
+import {HuffDeployer} from "foundry-huff/HuffDeployer";
 
-contract CounterTest is Test {
-    Counter public counter;
+contract SortTest is Test {
+    Sort sort;
 
-    function setUp() public {
-        counter = new Counter();
-        counter.setNumber(0);
+    function setUp() public virtual{
+        sort = ort(HuffDeployer.config().deploy("sort"));
     }
 
     function test_Increment() public {
