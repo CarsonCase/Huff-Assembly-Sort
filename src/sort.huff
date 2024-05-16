@@ -1,0 +1,122 @@
+#define function sort(uint256[] calldata) nonpayable returns(uint256[] memory)
+
+#define macro MAIN() = takes(0) returns(0) {
+    // load calldata
+    0x00                                // [0]
+    calldataload                        // [calldata]
+    0xe0                                // [32, calldata]
+    shr                                 // [function_selector]
+    
+    // check if sig matches
+    __FUNC_SIG(sort)                    // [function_selector, sort()]
+    eq                                  // [if_matches_function]
+    sortJump                            // [jump_location]
+    jumpi
+    0x00 0x00 revert                    // []
+
+
+    sortJump:
+        SORT()
+
+}
+
+
+#define macro SORT() = takes(0) returns(0){
+    // load memory with calldata
+    0xa0                                // [size]
+    0x04                                // [offset calldata, size]
+    0x00                                // [mem, offset, calldata]
+    calldatacopy                        // []
+
+    // read the size of the array @0x20
+    0x20                                // [0x20]
+    mload                               // [size]
+    0x01                                // [1, size]
+    add                                 // [size = size + 1]
+
+    // create a  count variable
+    0x02                                // [x=1, size]
+
+    loopJump:
+        // check if count == length
+        dup2                                // [size, x, size]
+        dup2                                // [x, size, x, size]
+        eq                                  // [isEqualSize, x, size]
+        endJump                             // [jumpLoc, isEqualSize, x, size]
+        jumpi                               // [x, size]
+
+        // loop ahead and swap if an element
+        // is larger
+        dup1                                // [y, x, size]
+        SWAPLOOP()                          // [y+1, x, size]
+        pop                                 // [x, size]
+
+        // add to the count
+        0x01                                // [1, x, size]
+        add                                 // [x+1, size]
+        loopJump                            // [loopJumpLoc, x+1, size]
+        jump
+
+
+    // when the loop is complete
+    endJump:
+        0xa0                                // [size]
+        0x00                                // [offset mem, size]
+        return                              // []
+}
+
+#define macro SWAPLOOP() = takes(0) returns(0){
+    swapLoopJump:
+        // check if x > y + 1
+        0x01                            // [1, y, x, size]
+        add                             // [y+1, x, size]
+        dup1                            // [y+1, y+1, x, size]
+        MLOAD_INDEX()                   // [arr[y+1], y+1, x, size]
+        dup3                            // [x, arr[y+1], y+1, x, size]
+        MLOAD_INDEX()                   // [arr[x], arr[y+1], y+1, x, size]                 
+        gt                              // [x>y+1, y+1, x, size]
+
+        // if not, don't swap
+        iszero                          // [!x>y+1, y+1, x, size]                          
+        skipSwap                        // [swapLoc, !?, y+1, x, size]
+        jumpi                           // [y+1, x, size]
+        SWAP()                          // [y+1, x, size]
+        skipSwap:
+
+        dup3                            // [size, y+1, x,size]
+        dup2                            // [size, y+1, y+1, x,size]
+        eq                              // [size == y+1, y+1, x, size]
+        iszero                          // [size != y+1, y+1, x, size]
+        swapLoopJump                    // [jumpLoc, size != y+1, y+1, x, size]
+        jumpi                           // [y+1, x, size]
+
+}
+
+#define macro SWAP() = takes(0) returns(0){
+                                            // [x, y+1, size]
+        // get temp y+1 value
+        dup2                                // [y+1, x, y+1, size]
+        MLOAD_INDEX()                       // [a[y+1], x, y+1, size]
+    
+        // store x value in y+1
+        dup2                                // [x, a[y+1], x, y+1, size]
+        MLOAD_INDEX()                       // [a[x], a[y+1], x, y+1, size]
+        dup4                                // [y+1, a[x], a[y+1], x, y+1, size]
+        MSTORE_INDEX()                      // [a[y+1], x, y+1, size]
+
+        // store temp y value in x
+        dup2                                // [x, a[y+1], x, y+1, size]
+        MSTORE_INDEX()                      // [x, y+1, size]
+}
+
+#define macro MLOAD_INDEX() = takes(0) returns(0){
+    0x20
+    mul
+    mload
+}
+
+#define macro MSTORE_INDEX() = takes(0) returns(0){
+    0x20
+    mul
+    mstore
+}
