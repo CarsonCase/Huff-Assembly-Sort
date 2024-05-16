@@ -22,20 +22,29 @@
 
 
 #define macro SORT() = takes(0) returns(0){
-    // load memory with calldata
-    0xa0                                // [size]
-    0x04                                // [offset calldata, size]
-    0x00                                // [mem, offset, calldata]
-    calldatacopy                        // []
+    // after loading calldata, subtract 1 from size to ignore 0x20 prefix of array
+    0x01
 
     // read the size of the array @0x20
-    0x20                                // [0x20]
-    mload                               // [size]
-    0x01                                // [1, size]
-    add                                 // [size = size + 1]
+    0x24                                // [0x20, 1]
+    calldataload                        // [size, 1]
+    0x02                                // [1, size, 1]
+    add                                 // [size = size + 1, 1]
+    dup1                                // [size, size, 1]
+
+    // load memory with calldata
+    0x20                                // [0x20, size, size, 1]
+    mul                                 // [size_offset, size, 1]
+    0x04                                // [offset calldata, size_offset, size, 1]
+    0x00                                // [mem, offset calldata, size_iffset, size, 1]
+    calldatacopy                        // [size, 1]
+
+    sub                                 // [size = size - 1]
+
+
 
     // create a  count variable
-    0x02                                // [x=1, size]
+    0x02                                // [x=2, size]
 
     loopJump:
         // check if count == length
@@ -60,7 +69,10 @@
 
     // when the loop is complete
     endJump:
-        0xa0                                // [size]
+        pop                                 // [size]
+        0x01 add                            // [original_size]
+
+        0x20 mul                            // [size_mem]
         0x00                                // [offset mem, size]
         return                              // []
 }
@@ -83,12 +95,13 @@
         SWAP()                          // [y+1, x, size]
         skipSwap:
 
-        dup3                            // [size, y+1, x,size]
-        dup2                            // [size, y+1, y+1, x,size]
-        eq                              // [size == y+1, y+1, x, size]
-        iszero                          // [size != y+1, y+1, x, size]
-        swapLoopJump                    // [jumpLoc, size != y+1, y+1, x, size]
+        dup3                            // [size, y+1, x, size]
+        dup2                            // [y+1, size, y+1, x,size]
+        eq                              // [y+1 == size, y+1, x, size]
+        iszero                          // [y+1 != size, y+1, x, size]
+        swapLoopJump                    // [jumpLoc, y+1 != size, y+1, x, size]
         jumpi                           // [y+1, x, size]
+        
 
 }
 

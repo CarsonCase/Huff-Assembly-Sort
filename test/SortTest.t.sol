@@ -13,15 +13,21 @@ contract SortTest is Test {
     }
 
     function testSort() external{
-        uint[] memory arr = new uint[](3);
+        uint[] memory arr = new uint[](6);
         arr[0] = 2;
         arr[1] = 3;
         arr[2] = 1;
+        arr[3] = 235;
+        arr[4] = 67;
+        arr[5] = 1;
         uint[] memory result = sort.sort(arr);
 
         assertEq(result[0], 1);
-        assertEq(result[1], 2);
-        assertEq(result[2], 3);
+        assertEq(result[1], 1);
+        assertEq(result[2], 2);
+        assertEq(result[3], 3);
+        assertEq(result[4], 67);
+        assertEq(result[5], 235);
 
     }
 }
